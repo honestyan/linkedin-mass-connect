@@ -1,3 +1,14 @@
+async function scrollDownUntilEnd() {
+  let previousHeight;
+  do {
+    previousHeight = document.body.scrollHeight;
+    window.scrollTo(0, document.body.scrollHeight);
+
+    await sleep(1000); // Brief pause for content to load
+
+  } while (document.body.scrollHeight > previousHeight);
+}
+
 async function clickConnectButtons() {
   const connectButtons = document.querySelectorAll(
     ".entity-result__actions.entity-result__divider"
@@ -43,7 +54,8 @@ async function clickConnectButtons() {
       continue; // Skip to the next iteration
     }
 
-    await sleep(getRandomDelay(2000, 5000)); // Random delay between 2-5 seconds
+    await sleep(getRandomDelay(2000, 5000));
+    await scrollDownUntilEnd(); 
   }
 
   // Navigate to the next page
