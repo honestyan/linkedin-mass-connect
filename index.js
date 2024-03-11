@@ -10,6 +10,7 @@ async function scrollDownUntilEnd() {
 }
 
 async function clickConnectButtons() {
+    await scrollDownUntilEnd(); 
   const connectButtons = document.querySelectorAll(
     ".entity-result__actions.entity-result__divider"
   );
@@ -65,7 +66,7 @@ async function clickConnectButtons() {
     nextPageButton.click();
     console.log("Navigating to the next page...");
 
-    await sleep(getRandomDelay(2000, 5000)); // Random delay between 2-5 seconds
+    await sleep(getRandomDelay(5000, 7000)); // Random delay between 2-5 seconds
 
     await clickConnectButtons(); // Click "Connect" buttons on the new page
   }
