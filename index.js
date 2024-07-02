@@ -1,3 +1,47 @@
+async function clickConnectButtons() {
+  const connectButtons = document.querySelectorAll(
+    "button[aria-label^='Invite'][aria-label$='to connect']"
+  );
+  for (let i = 0; i < connectButtons.length; i++) {
+    const button = connectButtons[i];
+    const connectionName = button
+      .getAttribute("aria-label")
+      .split(" to connect")[0]
+      .replace("Invite ", "");
+    console.log("Attempting to connect with ", connectionName); // Click the "Connect" button
+    button.click();
+    await sleep(getRandomDelay(2000, 3000)); // Wait for the modal to appear
+    const modal = await waitForElement(".artdeco-modal");
+    if (!modal) {
+      console.log("Modal didn't appear for ", connectionName);
+      continue;
+    } // Look for the "Send" button within the modal
+    const sendButton = modal.querySelector(
+      "button[aria-label='Send without a note'], button[aria-label='Send now']"
+    );
+    if (sendButton) {
+      sendButton.click();
+      console.log("Clicked 'Send' button for ", connectionName);
+    } else {
+      console.log("Couldn't find 'Send' button for ", connectionName); // If we can't find the send button, close the modal
+      const closeButton = modal.querySelector("button[aria-label='Dismiss']");
+      if (closeButton) {
+        closeButton.click();
+        console.log("Closed modal for ", connectionName);
+      }
+    }
+    await sleep(getRandomDelay(3000, 5000));
+    await scrollDownUntilEnd();
+  } // Navigate to the next page
+  const nextPageButton = document.querySelector("button[aria-label='Next']");
+  if (nextPageButton) {
+    nextPageButton.click();
+    console.log("Navigating to the next page...");
+    await sleep(getRandomDelay(3000, 5000));
+    await clickConnectButtons(); // Recursive call for the next page
+  }
+}
+
 async function scrollDownUntilEnd() {
   let previousHeight;
   do {
@@ -5,75 +49,40 @@ async function scrollDownUntilEnd() {
     window.scrollTo(0, document.body.scrollHeight);
 
     await sleep(1000); // Brief pause for content to load
-
   } while (document.body.scrollHeight > previousHeight);
 }
 
-async function clickConnectButtons() {
-    await scrollDownUntilEnd(); 
-  const connectButtons = document.querySelectorAll(
-    ".entity-result__actions.entity-result__divider"
-  );
+// Helper function to wait for an element to appear
 
-  for (let i = 0; i < connectButtons.length; i++) {
-    // Click the "Connect" button for each profile
-    const parentElement = connectButtons[i].parentElement;
-
-    if (!parentElement) continue;
-
-    const getConnectionName = parentElement
-      ?.querySelector(
-        ".entity-result__content.entity-result__divider > .mb1 .t-roman.t-sans .entity-result__title-text > .app-aware-link > span"
-      )
-      ?.innerText.split("\n")[0];
-
-    console.log("Adding ", getConnectionName);
-
-    const isConnectButton = ["Connect", "Conectar"].includes(
-      connectButtons[i].innerText
-    );
-
-    if (!isConnectButton) continue;
-
-    const addButton = connectButtons[i].querySelector("button");
-    addButton?.click();
-
-    await sleep(getRandomDelay(2000, 5000)); // Random delay between 2-5 seconds
-
-    const sendButtonModal = document.querySelector(
-      ".send-invite button[aria-label='Send now']"
-    );
-    const closeButtonModal = document.querySelector(".artdeco-modal__dismiss");
-
-    if (sendButtonModal) {
-      sendButtonModal.click();
-      console.log("Clicked 'Send' button for ", getConnectionName);
-    } else if (closeButtonModal) {
-      closeButtonModal.click();
-      console.log("Clicked 'Close' button for modal");
-      await sleep(getRandomDelay(2000, 5000)); // Random delay between 2-5 seconds
-      continue; // Skip to the next iteration
+function waitForElement(selector, timeout = 5000) {
+  return new Promise((resolve) => {
+    if (document.querySelector(selector)) {
+      return resolve(document.querySelector(selector));
     }
 
-    await sleep(getRandomDelay(2000, 5000));
-    await scrollDownUntilEnd(); 
-  }
+    const observer = new MutationObserver(() => {
+      if (document.querySelector(selector)) {
+        resolve(document.querySelector(selector));
 
-  // Navigate to the next page
-  const nextPageButton = document.querySelector("button[aria-label='Next']");
+        observer.disconnect();
+      }
+    });
 
-  if (nextPageButton) {
-    nextPageButton.click();
-    console.log("Navigating to the next page...");
+    observer.observe(document.body, {
+      childList: true,
 
-    await sleep(getRandomDelay(5000, 7000)); // Random delay between 2-5 seconds
+      subtree: true,
+    });
 
-    await clickConnectButtons(); // Click "Connect" buttons on the new page
-  }
+    setTimeout(() => {
+      observer.disconnect();
+
+      resolve(null);
+    }, timeout);
+  });
 }
 
-// Start clicking "Connect" buttons
-clickConnectButtons();
+// Existing helper functions
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,3 +91,7 @@ function sleep(ms) {
 function getRandomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
+
+// Start the process
+
+clickConnectButtons();
